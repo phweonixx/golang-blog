@@ -1,0 +1,10 @@
+CREATE TABLE `blog_api`.`category` (
+  `id` INT NOT NULL AUTO_INCREMENT,
+  `company_uuid` VARCHAR(36) NOT NULL,
+  `language` ENUM('uk', 'en') NOT NULL,
+  `created_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `updated_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  `user_uuid` VARCHAR(36) NOT NULL,
+  `parent_id` INT NULL,
+  PRIMARY KEY (`id`)
+);
