@@ -2,6 +2,7 @@ package auth
 
 import (
 	"blogAPI/internal/database"
+	"blogAPI/internal/models"
 	"errors"
 	"log"
 	"regexp"
@@ -21,7 +22,7 @@ var (
 	ErrEmailInvalidFormat  = errors.New("invalid email format")
 )
 
-func RegisterUser(user *User) error {
+func RegisterUser(user *models.User) error {
 	// Перевірка існування акаунту
 	exists, err := checkUserExists(user.Username, user.Email)
 	if err != nil {
@@ -59,7 +60,7 @@ func RegisterUser(user *User) error {
 
 func checkUserExists(username, email string) (bool, error) {
 	var countOfSimilarUsers int64
-	err := database.DBGorm.Model(&User{}).
+	err := database.DBGorm.Model(&models.User{}).
 		Where("username = ? OR email = ?", username, email).
 		Count(&countOfSimilarUsers).Error
 	if err != nil {
@@ -70,7 +71,7 @@ func checkUserExists(username, email string) (bool, error) {
 	return countOfSimilarUsers > 0, nil
 }
 
-func ValidateUserInput(user *User) error {
+func ValidateUserInput(user *models.User) error {
 	// Перевірка валідності введених значень
 	if len(user.Username) < 3 {
 		return ErrUsernameTooShort

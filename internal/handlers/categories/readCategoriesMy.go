@@ -3,7 +3,7 @@ package categories
 import (
 	"blogAPI/internal/config"
 	"blogAPI/internal/database"
-	"blogAPI/internal/translations"
+	"blogAPI/internal/models"
 	"blogAPI/pkg/middleware"
 	"encoding/json"
 	"errors"
@@ -45,10 +45,12 @@ func ReadCategoriesMy(w http.ResponseWriter, r *http.Request) {
 		pageDefault = pageInt
 	}
 
+	cfg := config.New()
+
 	// Перевірка введеного значення для мови
 	err := checkLanguage(lang)
 	if lang == "" {
-		lang = config.Config.DefaultLang
+		lang = cfg.Config.DefaultLang
 	} else if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
@@ -66,7 +68,7 @@ func ReadCategoriesMy(w http.ResponseWriter, r *http.Request) {
 	}
 
 	var total int64
-	err = database.DBGorm.Model(&Category{}).
+	err = database.DBGorm.Model(&models.Category{}).
 		Count(&total).Error
 	if err != nil {
 		http.Error(w, "Error counting categories", http.StatusInternalServerError)
@@ -85,10 +87,10 @@ func ReadCategoriesMy(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(response)
 }
 
-func getCategoriesMyWithTranslation(limit, offset int, language string) ([]Category, error) {
-	var categories []Category
+func getCategoriesMyWithTranslation(limit, offset int, language string) ([]models.Category, error) {
+	var categories []models.Category
 	// Запрос для пошуку статей по введеним значенням
-	query := database.DBGorm.Model(&Category{}).
+	query := database.DBGorm.Model(&models.Category{}).
 		Select("id, company_uuid, language, created_at, updated_at, user_uuid, parent_id")
 
 	query = query.
@@ -106,7 +108,7 @@ func getCategoriesMyWithTranslation(limit, offset int, language string) ([]Categ
 		fields := []string{"title", "slug", "seo_title", "seo_description"}
 		for _, field := range fields {
 			var content string
-			err := database.DBGorm.Model(&translations.Translations{}).
+			err := database.DBGorm.Model(&models.Translations{}).
 				Select("content").
 				Where("type = ? AND object_id = ? AND language = ? AND field = ?", "category", category.ID, language, field).
 				Scan(&content).Error

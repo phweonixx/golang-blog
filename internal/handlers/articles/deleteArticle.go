@@ -2,7 +2,7 @@ package articles
 
 import (
 	"blogAPI/internal/database"
-	"blogAPI/internal/translations"
+	"blogAPI/internal/models"
 	"blogAPI/pkg/middleware"
 	"log"
 	"net/http"
@@ -35,7 +35,7 @@ func DeleteArticle(w http.ResponseWriter, r *http.Request) {
 	// Перевірка чи є користувач автором статті
 	var articleAuthorUUID string
 
-	err = database.DBGorm.Model(&Article{}).
+	err = database.DBGorm.Model(&models.Article{}).
 		Select("user_uuid").
 		Where("id = ?", id).
 		Limit(1).
@@ -51,7 +51,7 @@ func DeleteArticle(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Видалення статті
-	err = database.DBGorm.Where("id = ?", id).Delete(&Article{}).Error
+	err = database.DBGorm.Where("id = ?", id).Delete(&models.Article{}).Error
 	if err != nil {
 		http.Error(w, "Error deleting the article!", http.StatusInternalServerError)
 		log.Println(err)
@@ -59,7 +59,7 @@ func DeleteArticle(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Видалення перекладів
-	err = database.DBGorm.Where("object_id = ? AND type = ?", id, "article").Delete(&translations.Translations{}).Error
+	err = database.DBGorm.Where("object_id = ? AND type = ?", id, "article").Delete(&models.Translations{}).Error
 	if err != nil {
 		http.Error(w, "Error deleting translations for the article!", http.StatusInternalServerError)
 		log.Println(err)
@@ -72,7 +72,7 @@ func DeleteArticle(w http.ResponseWriter, r *http.Request) {
 
 func checkArticleExists(id int) (bool, error) {
 	var count int64
-	err := database.DBGorm.Model(&Article{}).
+	err := database.DBGorm.Model(&models.Article{}).
 		Where("id = ?", id).
 		Count(&count).Error
 	if err != nil {

@@ -2,8 +2,7 @@ package articles
 
 import (
 	"blogAPI/internal/database"
-	"blogAPI/internal/handlers/companies"
-	"blogAPI/internal/translations"
+	"blogAPI/internal/models"
 	"blogAPI/pkg/middleware"
 	"encoding/json"
 	"errors"
@@ -17,7 +16,7 @@ import (
 // Функція створення статті
 func CreateArticle(w http.ResponseWriter, r *http.Request) {
 	// Отримання тіла запросу в JSON
-	var article Article
+	var article models.Article
 	err := json.NewDecoder(r.Body).Decode(&article)
 	if err != nil {
 		http.Error(w, "Invalid Input!", http.StatusBadRequest)
@@ -33,7 +32,7 @@ func CreateArticle(w http.ResponseWriter, r *http.Request) {
 
 	// Перевірка чи має користувач компанію
 	var companyUUID string
-	err = database.DBGorm.Model(&companies.Company{}).
+	err = database.DBGorm.Model(&models.Company{}).
 		Select("uuid").
 		Where("owner_uuid = ?", middleware.User_UUID).
 		Take(&companyUUID).Error
@@ -86,7 +85,7 @@ func CreateArticle(w http.ResponseWriter, r *http.Request) {
 		}
 
 		if content != "" {
-			translation := translations.Translations{
+			translation := models.Translations{
 				Type:     translationType,
 				ObjectID: article.ID,
 				Field:    field,
@@ -103,7 +102,7 @@ func CreateArticle(w http.ResponseWriter, r *http.Request) {
 
 	if len(article.RelatedArticlesID) != 0 {
 		for _, relatedID := range article.RelatedArticlesID {
-			relatedArticles := RelatedArticles{
+			relatedArticles := models.RelatedArticles{
 				ParentArticleID:  article.ID,
 				RelatedArticleID: relatedID,
 			}

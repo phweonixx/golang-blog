@@ -3,6 +3,7 @@ package categories
 import (
 	"blogAPI/internal/config"
 	"blogAPI/internal/database"
+	"blogAPI/internal/models"
 	"encoding/json"
 	"log"
 	"net/http"
@@ -12,10 +13,12 @@ func SearchCategories(w http.ResponseWriter, r *http.Request) {
 	lang := r.URL.Query().Get("lang")
 	searchValue := r.URL.Query().Get("value")
 
+	cfg := config.New()
+
 	// Перевірка введеного значення для мови
 	err := checkLanguage(lang)
 	if lang == "" {
-		lang = config.Config.DefaultLang
+		lang = cfg.Config.DefaultLang
 	} else if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
@@ -36,7 +39,7 @@ func SearchCategories(w http.ResponseWriter, r *http.Request) {
 	err = database.DBGorm.Table("translations").
 		Select("object_id, MATCH(content) AGAINST(? IN NATURAL LANGUAGE MODE) AS score", searchValue).
 		Where("MATCH(content) AGAINST(? IN NATURAL LANGUAGE MODE)", searchValue).
-		Having("score > ?", config.Config.Score).
+		Having("score > ?", cfg.Config.Score).
 		Scan(&translationMatches).Error
 
 	if err != nil {
@@ -64,7 +67,7 @@ func SearchCategories(w http.ResponseWriter, r *http.Request) {
 	}
 
 	var total int64
-	err = database.DBGorm.Model(&Category{}).
+	err = database.DBGorm.Model(&models.Category{}).
 		Count(&total).Error
 	if err != nil {
 		http.Error(w, "Error counting categories", http.StatusInternalServerError)
@@ -82,8 +85,8 @@ func SearchCategories(w http.ResponseWriter, r *http.Request) {
 }
 
 // Функція отримання категорії
-func getCategoriesById(ID []int, language string) ([]Category, error) {
-	var categories []Category
+func getCategoriesById(ID []int, language string) ([]models.Category, error) {
+	var categories []models.Category
 
 	// Получение категорий по ID
 	err := database.DBGorm.Where("id IN ?", ID).Find(&categories).Error

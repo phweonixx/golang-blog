@@ -9,15 +9,18 @@ import (
 )
 
 func SetupCategoryRoutes(router *mux.Router) {
+	categoryRouter := router.PathPrefix("/categories").Subrouter()
+	categoryRouter.Use(middleware.AuthMiddleware)
+
 	// Маршрути для маніпуляцій з категоріями
-	router.Handle("/categories", middleware.AuthMiddleware(http.HandlerFunc(categories.CreateCategory))).Methods("POST")
-	router.Handle("/categories", middleware.AuthMiddleware(http.HandlerFunc(categories.ReadCategories))).Methods("GET")
+	categoryRouter.Handle("", http.HandlerFunc(categories.CreateCategory)).Methods("POST")
+	categoryRouter.Handle("", http.HandlerFunc(categories.ReadCategories)).Methods("GET")
 
-	router.Handle("/categories/search", middleware.AuthMiddleware(http.HandlerFunc(categories.SearchCategories))).Methods("GET")
+	categoryRouter.Handle("/search", http.HandlerFunc(categories.SearchCategories)).Methods("GET")
 
-	router.Handle("/categories/my-categories", middleware.AuthMiddleware(http.HandlerFunc(categories.ReadCategoriesMy))).Methods("GET")
+	categoryRouter.Handle("/my-categories", http.HandlerFunc(categories.ReadCategoriesMy)).Methods("GET")
 
-	router.Handle("/categories/{id}", middleware.AuthMiddleware(http.HandlerFunc(categories.ReadCategory))).Methods("GET")
-	router.Handle("/categories/{id}", middleware.AuthMiddleware(http.HandlerFunc(categories.UpdateCategory))).Methods("PUT")
-	router.Handle("/categories/{id}", middleware.AuthMiddleware(http.HandlerFunc(categories.DeleteCategory))).Methods("DELETE")
+	categoryRouter.Handle("/{id}", http.HandlerFunc(categories.ReadCategory)).Methods("GET")
+	categoryRouter.Handle("/{id}", http.HandlerFunc(categories.UpdateCategory)).Methods("PUT")
+	categoryRouter.Handle("/{id}", http.HandlerFunc(categories.DeleteCategory)).Methods("DELETE")
 }

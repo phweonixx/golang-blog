@@ -1,16 +1,16 @@
 package users
 
 import (
-	"blogAPI/internal/auth"
 	"blogAPI/internal/database"
+	"blogAPI/internal/models"
 	"log"
 	"time"
 )
 
-func UpdateUser(user auth.User, UUID string) error {
+func UpdateUser(user models.User, UUID string) error {
 	user.UpdatedAt = time.Now()
 
-	updateUser := auth.User{
+	updateUser := models.User{
 		UpdatedAt: user.UpdatedAt,
 	}
 
@@ -30,7 +30,7 @@ func UpdateUser(user auth.User, UUID string) error {
 		updateUser.Email = user.Email
 	}
 
-	err := database.DBGorm.Model(&auth.User{}).
+	err := database.DBGorm.Model(&models.User{}).
 		Where("uuid = ?", UUID).
 		Updates(updateUser).Error
 
@@ -43,7 +43,7 @@ func UpdateUser(user auth.User, UUID string) error {
 
 func CheckUserUsernameOrEmailExists(username, email string) (bool, error) {
 	var count int64
-	err := database.DBGorm.Model(&auth.User{}).
+	err := database.DBGorm.Model(&models.User{}).
 		Where("username = ? OR email = ?", username, email).
 		Count(&count).Error
 

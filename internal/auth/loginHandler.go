@@ -2,6 +2,7 @@ package auth
 
 import (
 	"blogAPI/internal/database"
+	"blogAPI/internal/models"
 	"encoding/json"
 	"log"
 	"net/http"
@@ -9,7 +10,7 @@ import (
 
 func LoginHandler(w http.ResponseWriter, r *http.Request) {
 	// Отримання тіла запросу в JSON
-	var credentials Credentials
+	var credentials models.Credentials
 	err := json.NewDecoder(r.Body).Decode(&credentials)
 	if err != nil {
 		http.Error(w, "Invalid Input!", http.StatusBadRequest)
@@ -58,7 +59,7 @@ func LoginHandler(w http.ResponseWriter, r *http.Request) {
 // Перевірка існування акаунту
 func checkUserExistsLogin(username, email string) (bool, error) {
 	var exists bool
-	err := database.DBGorm.Model(&User{}).
+	err := database.DBGorm.Model(&models.User{}).
 		Select("1").
 		Where("(username = ? OR email = ?) AND deleted_at IS NULL", username, email).
 		Limit(1).

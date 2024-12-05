@@ -2,6 +2,7 @@ package companies
 
 import (
 	"blogAPI/internal/database"
+	"blogAPI/internal/models"
 	"blogAPI/pkg/middleware"
 	"errors"
 	"log"
@@ -13,7 +14,7 @@ import (
 var ErrTitleTooShort = errors.New("title less than 3 characters")
 var ErrCompanyExist = errors.New("user already has a company")
 
-func CreateCompany(company *Company) error {
+func CreateCompany(company *models.Company) error {
 	timeNow := time.Now()
 	company.CreatedAt = timeNow
 	company.UpdatedAt = timeNow
@@ -48,7 +49,7 @@ func CreateCompany(company *Company) error {
 
 func checkCompanyExists(ownerUUID string) (bool, error) {
 	var count int64
-	err := database.DBGorm.Model(&Company{}).
+	err := database.DBGorm.Model(&models.Company{}).
 		Where("owner_uuid = ? AND deleted_at IS NULL", ownerUUID).
 		Count(&count).Error
 	if err != nil {

@@ -2,6 +2,7 @@ package companies
 
 import (
 	"blogAPI/internal/database"
+	"blogAPI/internal/models"
 	"encoding/json"
 	"log"
 	"net/http"
@@ -9,10 +10,10 @@ import (
 )
 
 type Response struct {
-	Companies []Company `json:"categories"`
-	Total     int64     `json:"total"`
-	Page      int       `json:"page"`
-	Limit     int       `json:"limit"`
+	Companies []models.Company `json:"categories"`
+	Total     int64            `json:"total"`
+	Page      int              `json:"page"`
+	Limit     int              `json:"limit"`
 }
 
 func ReadCompaniesHandler(w http.ResponseWriter, r *http.Request) {
@@ -58,7 +59,7 @@ func ReadCompaniesHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	var total int64
-	err = database.DBGorm.Model(&Company{}).
+	err = database.DBGorm.Model(&models.Company{}).
 		Count(&total).Error
 	if err != nil {
 		http.Error(w, "Error counting companies", http.StatusInternalServerError)

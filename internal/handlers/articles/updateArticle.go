@@ -2,7 +2,7 @@ package articles
 
 import (
 	"blogAPI/internal/database"
-	"blogAPI/internal/translations"
+	"blogAPI/internal/models"
 	"blogAPI/pkg/middleware"
 	"encoding/json"
 	"errors"
@@ -40,7 +40,7 @@ func UpdateArticle(w http.ResponseWriter, r *http.Request) {
 	// Перевірка чи є користувач автором статті
 	var articleAuthorUUID string
 
-	err = database.DBGorm.Model(&Article{}).
+	err = database.DBGorm.Model(&models.Article{}).
 		Select("user_uuid").
 		Where("id = ?", id).
 		Limit(1).
@@ -56,7 +56,7 @@ func UpdateArticle(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Отримання тіла запросу в JSON
-	var article Article
+	var article models.Article
 	err = json.NewDecoder(r.Body).Decode(&article)
 	if err != nil {
 		http.Error(w, "Invalid Input!", http.StatusBadRequest)
@@ -74,9 +74,9 @@ func UpdateArticle(w http.ResponseWriter, r *http.Request) {
 	article.UpdatedAt = time.Now()
 
 	// Запрос для оновлення статті
-	err = database.DBGorm.Model(&Article{}).
+	err = database.DBGorm.Model(&models.Article{}).
 		Where("id = ?", id).
-		Updates(Article{
+		Updates(models.Article{
 			CategoryID: article.CategoryID,
 			Language:   article.Language,
 			UpdatedAt:  article.UpdatedAt,
@@ -107,7 +107,7 @@ func UpdateArticle(w http.ResponseWriter, r *http.Request) {
 		}
 
 		if content != "" {
-			translation := translations.Translations{
+			translation := models.Translations{
 				Type:     translationType,
 				ObjectID: id,
 				Field:    field,
@@ -115,8 +115,8 @@ func UpdateArticle(w http.ResponseWriter, r *http.Request) {
 				Content:  content,
 			}
 
-			var existingTranslation translations.Translations
-			err = database.DBGorm.Model(&translations.Translations{}).
+			var existingTranslation models.Translations
+			err = database.DBGorm.Model(&models.Translations{}).
 				Where("type = ? AND object_id = ? AND language = ? AND field = ?", translation.Type, translation.ObjectID, translation.Language, translation.Field).
 				First(&existingTranslation).Error
 
@@ -128,7 +128,7 @@ func UpdateArticle(w http.ResponseWriter, r *http.Request) {
 					return
 				}
 			} else if err == nil {
-				err = database.DBGorm.Model(&translations.Translations{}).
+				err = database.DBGorm.Model(&models.Translations{}).
 					Where("type = ? AND object_id = ? AND language = ? AND field = ?", translation.Type, translation.ObjectID, translation.Language, translation.Field).
 					Updates(map[string]interface{}{
 						"content": content,
@@ -149,7 +149,7 @@ func UpdateArticle(w http.ResponseWriter, r *http.Request) {
 
 	if len(article.RelatedArticlesID) != 0 {
 		for _, relatedID := range article.RelatedArticlesID {
-			var existing RelatedArticles
+			var existing models.RelatedArticles
 			err := database.DBGorm.Where("parent_article_id = ? AND related_article_id = ?", id, relatedID).First(&existing).Error
 
 			if err != nil && err != gorm.ErrRecordNotFound {
@@ -159,7 +159,7 @@ func UpdateArticle(w http.ResponseWriter, r *http.Request) {
 			}
 
 			if err == gorm.ErrRecordNotFound {
-				err = database.DBGorm.Create(&RelatedArticles{
+				err = database.DBGorm.Create(&models.RelatedArticles{
 					ParentArticleID:  id,
 					RelatedArticleID: relatedID,
 				}).Error

@@ -3,7 +3,7 @@ package categories
 import (
 	"blogAPI/internal/config"
 	"blogAPI/internal/database"
-	"blogAPI/internal/translations"
+	"blogAPI/internal/models"
 	"encoding/json"
 	"errors"
 	"log"
@@ -24,12 +24,14 @@ func ReadCategory(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	cfg := config.New()
+
 	// Перевірка введеного значення для мови
 	lang := r.URL.Query().Get("lang")
 
 	err = checkLanguage(lang)
 	if lang == "" {
-		lang = config.Config.DefaultLang
+		lang = cfg.Config.DefaultLang
 	} else if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
@@ -58,8 +60,8 @@ func ReadCategory(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(category)
 }
 
-func getCategoryWithTranslation(id int, language string) (Category, error) {
-	var category Category
+func getCategoryWithTranslation(id int, language string) (models.Category, error) {
+	var category models.Category
 	// Заповнення структури даними з бази даних
 	err := database.DBGorm.First(&category, id).Error
 	if err != nil {
@@ -72,7 +74,7 @@ func getCategoryWithTranslation(id int, language string) (Category, error) {
 	for _, field := range fields {
 		var content string
 
-		result := database.DBGorm.Model(&translations.Translations{}).
+		result := database.DBGorm.Model(&models.Translations{}).
 			Select("content").
 			Where("type = ? AND object_id = ? AND language = ? AND field = ?", "category", id, language, field).
 			Scan(&content)

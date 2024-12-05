@@ -3,6 +3,7 @@ package auth
 import (
 	"blogAPI/internal/config"
 	"blogAPI/internal/database"
+	"blogAPI/internal/models"
 	"errors"
 	"log"
 	"time"
@@ -18,10 +19,10 @@ type Claims struct {
 	jwt.StandardClaims
 }
 
-func LoginUser(credentials *Credentials) (string, error) {
+func LoginUser(credentials *models.Credentials) (string, error) {
 	var storedHash string
 	var user_uuid string
-	err := database.DBGorm.Model(&User{}).
+	err := database.DBGorm.Model(&models.User{}).
 		Select("password, uuid").
 		Where("username = ? OR email = ?", credentials.Username, credentials.Email).
 		Row().
@@ -41,8 +42,10 @@ func LoginUser(credentials *Credentials) (string, error) {
 		return "", errors.New("invalid password")
 	}
 
+	cfg := config.New()
+
 	// Створення токену
-	expirationTime := time.Now().Add(config.JWTConfig.TokenLifetime)
+	expirationTime := time.Now().Add(cfg.JWTConfig.TokenLifetime)
 	claims := &Claims{
 		Username: credentials.Username,
 		UserUUID: user_uuid,
@@ -53,7 +56,7 @@ func LoginUser(credentials *Credentials) (string, error) {
 
 	// Підпис токену
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
-	signedToken, err := token.SignedString(config.JWTConfig.JWTSecret)
+	signedToken, err := token.SignedString(cfg.JWTConfig.JWTSecret)
 	if err != nil {
 		log.Println("Error signing token:", err)
 		return "", err

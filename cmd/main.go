@@ -17,6 +17,8 @@ import (
 func main() {
 	http.Handle("/", api.Router)
 
+	cfg := config.New()
+
 	// Функція з ініціалізіцією бази даних
 	database.InitDB()
 
@@ -28,12 +30,12 @@ func main() {
 	signal.Notify(stop, syscall.SIGINT, syscall.SIGTERM)
 
 	srv := &http.Server{
-		Addr:    config.Config.Port,
+		Addr:    cfg.Config.Port,
 		Handler: api.Router,
 	}
 
 	go func() {
-		log.Println("Server started at", config.Config.Port)
+		log.Println("Server started at", cfg.Config.Port)
 		if err := srv.ListenAndServe(); err != nil && err != http.ErrServerClosed {
 			log.Fatalf("Server listen error: %v", err)
 		}

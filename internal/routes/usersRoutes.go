@@ -16,7 +16,10 @@ func SetupUserRoutes(router *mux.Router) {
 	// Маршрут для входу в акаунт
 	router.HandleFunc("/login", auth.LoginHandler).Methods("POST")
 
+	userRouter := router.PathPrefix("/users").Subrouter()
+	userRouter.Use(middleware.AuthMiddleware)
+
 	// Маршрути для маніпуляцій з користувачами
-	router.Handle("/users/{uuid}", middleware.AuthMiddleware(http.HandlerFunc(users.SoftDeleteUserHandler))).Methods("DELETE")
-	router.Handle("/users/{uuid}", middleware.AuthMiddleware(http.HandlerFunc(users.UpdateUserHandler))).Methods("PUT")
+	userRouter.Handle("/{uuid}", http.HandlerFunc(users.SoftDeleteUserHandler)).Methods("DELETE")
+	userRouter.Handle("/{uuid}", http.HandlerFunc(users.UpdateUserHandler)).Methods("PUT")
 }

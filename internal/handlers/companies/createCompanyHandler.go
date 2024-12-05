@@ -1,6 +1,7 @@
 package companies
 
 import (
+	"blogAPI/internal/models"
 	"encoding/json"
 	"log"
 	"net/http"
@@ -8,7 +9,7 @@ import (
 
 func CreateCompanyHandler(w http.ResponseWriter, r *http.Request) {
 	// Отримання тіла запросу в JSON
-	var company Company
+	var company models.Company
 	err := json.NewDecoder(r.Body).Decode(&company)
 	if err != nil {
 		http.Error(w, "Invalid Input!", http.StatusBadRequest)

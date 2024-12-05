@@ -2,8 +2,7 @@ package categories
 
 import (
 	"blogAPI/internal/database"
-	"blogAPI/internal/handlers/companies"
-	"blogAPI/internal/translations"
+	"blogAPI/internal/models"
 	"blogAPI/pkg/middleware"
 	"encoding/json"
 	"errors"
@@ -17,7 +16,7 @@ import (
 // Функція створення статті
 func CreateCategory(w http.ResponseWriter, r *http.Request) {
 	// Отримання тіла запросу в JSON
-	var category Category
+	var category models.Category
 	err := json.NewDecoder(r.Body).Decode(&category)
 	if err != nil {
 		http.Error(w, "Invalid Input!", http.StatusBadRequest)
@@ -33,7 +32,7 @@ func CreateCategory(w http.ResponseWriter, r *http.Request) {
 
 	// Перевірка чи має користувач компанію
 	var companyUUID string
-	err = database.DBGorm.Model(&companies.Company{}).
+	err = database.DBGorm.Model(&models.Company{}).
 		Select("uuid").
 		Where("owner_uuid = ?", middleware.User_UUID).
 		Take(&companyUUID).Error
@@ -84,7 +83,7 @@ func CreateCategory(w http.ResponseWriter, r *http.Request) {
 		}
 
 		if content != "" {
-			translation := translations.Translations{
+			translation := models.Translations{
 				Type:     translationType,
 				ObjectID: category.ID,
 				Field:    field,

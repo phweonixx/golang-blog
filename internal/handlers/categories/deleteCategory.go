@@ -2,7 +2,7 @@ package categories
 
 import (
 	"blogAPI/internal/database"
-	"blogAPI/internal/translations"
+	"blogAPI/internal/models"
 	"blogAPI/pkg/middleware"
 	"log"
 	"net/http"
@@ -35,7 +35,7 @@ func DeleteCategory(w http.ResponseWriter, r *http.Request) {
 	// Перевірка чи є користувач автором категорії
 	var categoryAuthorUUID string
 
-	err = database.DBGorm.Model(&Category{}).
+	err = database.DBGorm.Model(&models.Category{}).
 		Select("user_uuid").
 		Where("id = ?", id).
 		Limit(1).
@@ -54,7 +54,7 @@ func DeleteCategory(w http.ResponseWriter, r *http.Request) {
 	err = database.DBGorm.
 		Unscoped().
 		Where("id = ?", id).
-		Delete(&Category{}).Error
+		Delete(&models.Category{}).Error
 	if err != nil {
 		http.Error(w, "Error deleting the category!", http.StatusInternalServerError)
 		log.Println(err)
@@ -65,7 +65,7 @@ func DeleteCategory(w http.ResponseWriter, r *http.Request) {
 	err = database.DBGorm.
 		Unscoped().
 		Where("object_id = ? AND type = ?", id, "category").
-		Delete(&translations.Translations{}).Error
+		Delete(&models.Translations{}).Error
 	if err != nil {
 		http.Error(w, "Error deleting translations for the category!", http.StatusInternalServerError)
 		log.Println(err)
@@ -78,7 +78,7 @@ func DeleteCategory(w http.ResponseWriter, r *http.Request) {
 
 func checkCategoryExists(id int) (bool, error) {
 	var count int64
-	err := database.DBGorm.Model(&Category{}).
+	err := database.DBGorm.Model(&models.Category{}).
 		Where("id = ?", id).
 		Count(&count).Error
 	if err != nil {

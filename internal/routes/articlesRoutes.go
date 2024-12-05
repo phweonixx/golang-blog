@@ -9,15 +9,18 @@ import (
 )
 
 func SetupArticleRoutes(router *mux.Router) {
+	articleRouter := router.PathPrefix("/articles").Subrouter()
+	articleRouter.Use(middleware.AuthMiddleware)
+
 	// Маршрути для маніпуляцій зі статтями
-	router.Handle("/articles", middleware.AuthMiddleware(http.HandlerFunc(articles.CreateArticle))).Methods("POST")
-	router.Handle("/articles", middleware.AuthMiddleware(http.HandlerFunc(articles.ReadArticles))).Methods("GET")
+	articleRouter.Handle("", http.HandlerFunc(articles.CreateArticle)).Methods("POST")
+	articleRouter.Handle("", http.HandlerFunc(articles.ReadArticles)).Methods("GET")
 
-	router.Handle("/articles/search", middleware.AuthMiddleware(http.HandlerFunc(articles.SearchArticles))).Methods("GET")
+	articleRouter.Handle("/search", http.HandlerFunc(articles.SearchArticles)).Methods("GET")
 
-	router.Handle("/articles/my-articles", middleware.AuthMiddleware(http.HandlerFunc(articles.ReadArticlesMy))).Methods("GET")
+	articleRouter.Handle("/my-articles", http.HandlerFunc(articles.ReadArticlesMy)).Methods("GET")
 
-	router.Handle("/articles/{id}", middleware.AuthMiddleware(http.HandlerFunc(articles.ReadArticle))).Methods("GET")
-	router.Handle("/articles/{id}", middleware.AuthMiddleware(http.HandlerFunc(articles.UpdateArticle))).Methods("PUT")
-	router.Handle("/articles/{id}", middleware.AuthMiddleware(http.HandlerFunc(articles.DeleteArticle))).Methods("DELETE")
+	articleRouter.Handle("/{id}", http.HandlerFunc(articles.ReadArticle)).Methods("GET")
+	articleRouter.Handle("/{id}", http.HandlerFunc(articles.UpdateArticle)).Methods("PUT")
+	articleRouter.Handle("/{id}", http.HandlerFunc(articles.DeleteArticle)).Methods("DELETE")
 }

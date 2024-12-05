@@ -2,18 +2,19 @@ package companies
 
 import (
 	"blogAPI/internal/database"
+	"blogAPI/internal/models"
 	"log"
 	"time"
 )
 
-func UpdateCompany(company *Company, UUID string) error {
+func UpdateCompany(company *models.Company, UUID string) error {
 	// Задання часу оновлення компанії
 	company.UpdatedAt = time.Now()
 
 	// Запрос для оновлення компанії
-	err := database.DBGorm.Model(&Company{}).
+	err := database.DBGorm.Model(&models.Company{}).
 		Where("uuid = ?", UUID).
-		Updates(Company{
+		Updates(models.Company{
 			UpdatedAt: company.UpdatedAt,
 			Title:     company.Title,
 		}).Error

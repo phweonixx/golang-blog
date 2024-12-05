@@ -1,16 +1,16 @@
-package articles
+package models
 
 import "time"
 
 // Модель для категорії
 type Article struct {
-	ID          int       `json:"id" gorm:"column:id;primaryKey"`
+	ID          int       `json:"id" gorm:"column:id;type:int;primaryKey"`
 	CategoryID  int       `json:"category_id" gorm:"column:category_id"`
-	CompanyUUID string    `json:"company_uuid" gorm:"column:company_uuid"`
-	Language    string    `json:"language" gorm:"column:language"`
-	CreatedAt   time.Time `json:"created_at" gorm:"column:created_at"`
-	UpdatedAt   time.Time `json:"updated_at" gorm:"column:updated_at"`
-	UserUUID    string    `json:"user_uuid" gorm:"column:user_uuid"`
+	CompanyUUID string    `json:"company_uuid" gorm:"column:company_uuid;type:varchar(36);not null"`
+	Language    string    `json:"language" gorm:"column:language;type:enum('en','uk');not null"`
+	CreatedAt   time.Time `json:"created_at" gorm:"column:created_at;type:datetime"`
+	UpdatedAt   time.Time `json:"updated_at" gorm:"column:updated_at;type:datetime"`
+	UserUUID    string    `json:"user_uuid" gorm:"column:user_uuid;type:varchar(36)"`
 
 	// Динамічні поля
 	Title          string `json:"title" gorm:"-"`

@@ -2,7 +2,7 @@ package categories
 
 import (
 	"blogAPI/internal/database"
-	"blogAPI/internal/translations"
+	"blogAPI/internal/models"
 	"blogAPI/pkg/middleware"
 	"encoding/json"
 	"errors"
@@ -40,7 +40,7 @@ func UpdateCategory(w http.ResponseWriter, r *http.Request) {
 	// Перевірка чи є користувач автором категорії
 	var categoryAuthorUUID string
 
-	err = database.DBGorm.Model(&Category{}).
+	err = database.DBGorm.Model(&models.Category{}).
 		Select("user_uuid").
 		Where("id = ?", id).
 		Limit(1).
@@ -56,7 +56,7 @@ func UpdateCategory(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Отримання тіла запросу в JSON
-	var category Category
+	var category models.Category
 	err = json.NewDecoder(r.Body).Decode(&category)
 	if err != nil {
 		http.Error(w, "Invalid Input!", http.StatusBadRequest)
@@ -75,9 +75,9 @@ func UpdateCategory(w http.ResponseWriter, r *http.Request) {
 	category.UpdatedAt = time.Now()
 
 	// Запрос для оновлення категорії
-	err = database.DBGorm.Model(&Category{}).
+	err = database.DBGorm.Model(&models.Category{}).
 		Where("id = ?", id).
-		Updates(Category{
+		Updates(models.Category{
 			Language:  category.Language,
 			Parent_id: category.Parent_id,
 			UpdatedAt: category.UpdatedAt,
@@ -106,7 +106,7 @@ func UpdateCategory(w http.ResponseWriter, r *http.Request) {
 		}
 
 		if content != "" {
-			translation := translations.Translations{
+			translation := models.Translations{
 				Type:     translationType,
 				ObjectID: id,
 				Field:    field,
@@ -114,8 +114,8 @@ func UpdateCategory(w http.ResponseWriter, r *http.Request) {
 				Content:  content,
 			}
 
-			var existingTranslation translations.Translations
-			err = database.DBGorm.Model(&translations.Translations{}).
+			var existingTranslation models.Translations
+			err = database.DBGorm.Model(&models.Translations{}).
 				Where("type = ? AND object_id = ? AND language = ? AND field = ?", translation.Type, translation.ObjectID, translation.Language, translation.Field).
 				First(&existingTranslation).Error
 
@@ -127,7 +127,7 @@ func UpdateCategory(w http.ResponseWriter, r *http.Request) {
 					return
 				}
 			} else if err == nil {
-				err = database.DBGorm.Model(&translations.Translations{}).
+				err = database.DBGorm.Model(&models.Translations{}).
 					Where("type = ? AND object_id = ? AND language = ? AND field = ?", translation.Type, translation.ObjectID, translation.Language, translation.Field).
 					Updates(map[string]interface{}{
 						"content": content,

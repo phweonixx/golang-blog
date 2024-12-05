@@ -14,6 +14,8 @@ import (
 var User_UUID string
 
 func AuthMiddleware(next http.Handler) http.Handler {
+	cfg := config.New()
+
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		tokenString := r.Header.Get("Authorization")
 
@@ -30,12 +32,17 @@ func AuthMiddleware(next http.Handler) http.Handler {
 			if !ok {
 				return nil, http.ErrAbortHandler
 			}
-			return config.JWTConfig.JWTSecret, nil
+			return cfg.JWTConfig.JWTSecret, nil
 		})
 
-		if err != nil || !token.Valid {
-			log.Println("Invalid token")
+		if err != nil {
+			http.Error(w, "Error validating token", http.StatusUnauthorized)
+			log.Println(err)
+			return
+		}
+		if !token.Valid {
 			http.Error(w, "Invalid token", http.StatusUnauthorized)
+			log.Println("Invalid token")
 			return
 		}
 

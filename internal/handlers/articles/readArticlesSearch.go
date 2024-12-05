@@ -3,6 +3,7 @@ package articles
 import (
 	"blogAPI/internal/config"
 	"blogAPI/internal/database"
+	"blogAPI/internal/models"
 	"encoding/json"
 	"log"
 	"net/http"
@@ -12,10 +13,12 @@ func SearchArticles(w http.ResponseWriter, r *http.Request) {
 	lang := r.URL.Query().Get("lang")
 	searchValue := r.URL.Query().Get("value")
 
+	cfg := config.New()
+
 	// Перевірка введеного значення для мови
 	err := checkLanguage(lang)
 	if lang == "" {
-		lang = config.Config.DefaultLang
+		lang = cfg.Config.DefaultLang
 	} else if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
@@ -37,7 +40,7 @@ func SearchArticles(w http.ResponseWriter, r *http.Request) {
 		FROM translations
 		WHERE MATCH(content) AGAINST(? IN NATURAL LANGUAGE MODE)
 		HAVING score > ?;
-	`, searchValue, searchValue, config.Config.Score).Scan(&results).Error
+	`, searchValue, searchValue, cfg.Config.Score).Scan(&results).Error
 	if err != nil {
 		http.Error(w, "Error searching a value!", http.StatusInternalServerError)
 		log.Println(err)
@@ -63,7 +66,7 @@ func SearchArticles(w http.ResponseWriter, r *http.Request) {
 	}
 
 	var total int64
-	err = database.DBGorm.Model(&Article{}).Count(&total).Error
+	err = database.DBGorm.Model(&models.Article{}).Count(&total).Error
 	if err != nil {
 		http.Error(w, "Error counting articles", http.StatusInternalServerError)
 		log.Println(err)
@@ -80,8 +83,8 @@ func SearchArticles(w http.ResponseWriter, r *http.Request) {
 }
 
 // Функція отримання статті
-func getArticlesById(ID []int, language string) ([]Article, error) {
-	var articles []Article
+func getArticlesById(ID []int, language string) ([]models.Article, error) {
+	var articles []models.Article
 
 	err := database.DBGorm.Where("id IN ?", ID).Find(&articles).Error
 	if err != nil {

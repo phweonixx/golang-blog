@@ -2,6 +2,7 @@ package companies
 
 import (
 	"blogAPI/internal/database"
+	"blogAPI/internal/models"
 	"blogAPI/pkg/middleware"
 	"encoding/json"
 	"log"
@@ -29,7 +30,7 @@ func UpdateCompanyHandler(w http.ResponseWriter, r *http.Request) {
 	// Перевірка чи є користувач автором компанії
 	var companyAuthorUUID string
 
-	err = database.DBGorm.Model(&Company{}).
+	err = database.DBGorm.Model(&models.Company{}).
 		Select("owner_uuid").
 		Where("uuid = ?", UUID).
 		Limit(1).
@@ -45,7 +46,7 @@ func UpdateCompanyHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Отримання тіла запросу в JSON
-	var company Company
+	var company models.Company
 	err = json.NewDecoder(r.Body).Decode(&company)
 	if err != nil {
 		http.Error(w, "Invalid Input!", http.StatusBadRequest)

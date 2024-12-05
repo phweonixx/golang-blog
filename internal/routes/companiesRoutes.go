@@ -9,9 +9,12 @@ import (
 )
 
 func SetupCompanyRoutes(router *mux.Router) {
+	companyRouter := router.PathPrefix("/companies").Subrouter()
+	companyRouter.Use(middleware.AuthMiddleware)
+
 	// Маршрути для маніпуляцій з компаніями
-	router.Handle("/companies", middleware.AuthMiddleware(http.HandlerFunc(companies.CreateCompanyHandler))).Methods("POST")
-	router.Handle("/companies", middleware.AuthMiddleware(http.HandlerFunc(companies.ReadCompaniesHandler))).Methods("GET")
-	router.Handle("/companies/{uuid}", middleware.AuthMiddleware(http.HandlerFunc(companies.UpdateCompanyHandler))).Methods("PUT")
-	router.Handle("/companies/{uuid}", middleware.AuthMiddleware(http.HandlerFunc(companies.SoftDeleteCompanyHandler))).Methods("DELETE")
+	companyRouter.Handle("", http.HandlerFunc(companies.CreateCompanyHandler)).Methods("POST")
+	companyRouter.Handle("", http.HandlerFunc(companies.ReadCompaniesHandler)).Methods("GET")
+	companyRouter.Handle("/{uuid}", http.HandlerFunc(companies.UpdateCompanyHandler)).Methods("PUT")
+	companyRouter.Handle("/{uuid}", http.HandlerFunc(companies.SoftDeleteCompanyHandler)).Methods("DELETE")
 }

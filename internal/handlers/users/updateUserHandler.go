@@ -1,7 +1,7 @@
 package users
 
 import (
-	"blogAPI/internal/auth"
+	"blogAPI/internal/models"
 	"blogAPI/pkg/middleware"
 	"encoding/json"
 	"log"
@@ -35,7 +35,7 @@ func UpdateUserHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Отримання тіла запросу в JSON
-	var user auth.User
+	var user models.User
 	err = json.NewDecoder(r.Body).Decode(&user)
 	if err != nil {
 		http.Error(w, "Invalid Input!", http.StatusBadRequest)

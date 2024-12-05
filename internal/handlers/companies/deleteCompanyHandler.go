@@ -2,6 +2,7 @@ package companies
 
 import (
 	"blogAPI/internal/database"
+	"blogAPI/internal/models"
 	"blogAPI/pkg/middleware"
 	"log"
 	"net/http"
@@ -28,7 +29,7 @@ func SoftDeleteCompanyHandler(w http.ResponseWriter, r *http.Request) {
 	// Перевірка чи є користувач автором компанії
 	var companyAuthorUUID string
 
-	err = database.DBGorm.Model(&Company{}).
+	err = database.DBGorm.Model(&models.Company{}).
 		Select("owner_uuid").
 		Where("uuid = ?", UUID).
 		Limit(1).

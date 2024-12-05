@@ -1,6 +1,7 @@
 package auth
 
 import (
+	"blogAPI/internal/models"
 	"encoding/json"
 	"log"
 	"net/http"
@@ -8,7 +9,7 @@ import (
 
 func RegisterHandler(w http.ResponseWriter, r *http.Request) {
 	// Отримання тіла запросу в JSON
-	var user User
+	var user models.User
 	err := json.NewDecoder(r.Body).Decode(&user)
 	if err != nil {
 		http.Error(w, "Invalid input!", http.StatusBadRequest)
