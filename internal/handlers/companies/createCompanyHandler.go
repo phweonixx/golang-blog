@@ -1,6 +1,7 @@
 package companies
 
 import (
+	"blogAPI/internal/helpers"
 	"blogAPI/internal/models"
 	"encoding/json"
 	"log"
@@ -33,10 +34,5 @@ func CreateCompanyHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Інформування про успішне створення компанії
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(http.StatusCreated)
-	json.NewEncoder(w).Encode(map[string]interface{}{
-		"message": "Company created successfully",
-		"company": company,
-	})
+	helpers.SendJSONResponse(w, http.StatusCreated, "Company created successfully", company)
 }

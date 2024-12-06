@@ -1,7 +1,7 @@
 package categories
 
 import (
-	"blogAPI/internal/database"
+	"blogAPI/internal/helpers"
 	"blogAPI/internal/models"
 	"blogAPI/pkg/middleware"
 	"log"
@@ -21,7 +21,7 @@ func DeleteCategory(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	exists, err := checkCategoryExists(id)
+	exists, err := helpers.CheckExists(id, "category")
 	if err != nil {
 		http.Error(w, "Error checking category existance.", http.StatusInternalServerError)
 		log.Println(err)
@@ -35,7 +35,7 @@ func DeleteCategory(w http.ResponseWriter, r *http.Request) {
 	// Перевірка чи є користувач автором категорії
 	var categoryAuthorUUID string
 
-	err = database.DBGorm.Model(&models.Category{}).
+	err = db.DBGorm.Model(&models.Category{}).
 		Select("user_uuid").
 		Where("id = ?", id).
 		Limit(1).
@@ -51,7 +51,7 @@ func DeleteCategory(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Видалення категорії
-	err = database.DBGorm.
+	err = db.DBGorm.
 		Unscoped().
 		Where("id = ?", id).
 		Delete(&models.Category{}).Error
@@ -62,7 +62,7 @@ func DeleteCategory(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Видалення перекладів
-	err = database.DBGorm.
+	err = db.DBGorm.
 		Unscoped().
 		Where("object_id = ? AND type = ?", id, "category").
 		Delete(&models.Translations{}).Error
@@ -74,15 +74,4 @@ func DeleteCategory(w http.ResponseWriter, r *http.Request) {
 
 	// Інформування про успішне видалення категорії
 	w.WriteHeader(http.StatusNoContent)
-}
-
-func checkCategoryExists(id int) (bool, error) {
-	var count int64
-	err := database.DBGorm.Model(&models.Category{}).
-		Where("id = ?", id).
-		Count(&count).Error
-	if err != nil {
-		return false, err
-	}
-	return count > 0, nil
 }

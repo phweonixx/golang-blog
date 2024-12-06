@@ -2,7 +2,7 @@ package categories
 
 import (
 	"blogAPI/internal/config"
-	"blogAPI/internal/database"
+	"blogAPI/internal/helpers"
 	"blogAPI/internal/models"
 	"blogAPI/pkg/middleware"
 	"encoding/json"
@@ -48,7 +48,7 @@ func ReadCategoriesMy(w http.ResponseWriter, r *http.Request) {
 	cfg := config.New()
 
 	// Перевірка введеного значення для мови
-	err := checkLanguage(lang)
+	err := helpers.CheckLanguage(lang)
 	if lang == "" {
 		lang = cfg.Config.DefaultLang
 	} else if err != nil {
@@ -68,7 +68,7 @@ func ReadCategoriesMy(w http.ResponseWriter, r *http.Request) {
 	}
 
 	var total int64
-	err = database.DBGorm.Model(&models.Category{}).
+	err = db.DBGorm.Model(&models.Category{}).
 		Count(&total).Error
 	if err != nil {
 		http.Error(w, "Error counting categories", http.StatusInternalServerError)
@@ -90,7 +90,7 @@ func ReadCategoriesMy(w http.ResponseWriter, r *http.Request) {
 func getCategoriesMyWithTranslation(limit, offset int, language string) ([]models.Category, error) {
 	var categories []models.Category
 	// Запрос для пошуку статей по введеним значенням
-	query := database.DBGorm.Model(&models.Category{}).
+	query := db.DBGorm.Model(&models.Category{}).
 		Select("id, company_uuid, language, created_at, updated_at, user_uuid, parent_id")
 
 	query = query.
@@ -108,7 +108,7 @@ func getCategoriesMyWithTranslation(limit, offset int, language string) ([]model
 		fields := []string{"title", "slug", "seo_title", "seo_description"}
 		for _, field := range fields {
 			var content string
-			err := database.DBGorm.Model(&models.Translations{}).
+			err := db.DBGorm.Model(&models.Translations{}).
 				Select("content").
 				Where("type = ? AND object_id = ? AND language = ? AND field = ?", "category", category.ID, language, field).
 				Scan(&content).Error

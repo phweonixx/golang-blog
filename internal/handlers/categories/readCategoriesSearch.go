@@ -2,7 +2,7 @@ package categories
 
 import (
 	"blogAPI/internal/config"
-	"blogAPI/internal/database"
+	"blogAPI/internal/helpers"
 	"blogAPI/internal/models"
 	"encoding/json"
 	"log"
@@ -16,7 +16,7 @@ func SearchCategories(w http.ResponseWriter, r *http.Request) {
 	cfg := config.New()
 
 	// Перевірка введеного значення для мови
-	err := checkLanguage(lang)
+	err := helpers.CheckLanguage(lang)
 	if lang == "" {
 		lang = cfg.Config.DefaultLang
 	} else if err != nil {
@@ -36,7 +36,7 @@ func SearchCategories(w http.ResponseWriter, r *http.Request) {
 		Score    float64 `gorm:"column:score"`
 	}
 
-	err = database.DBGorm.Table("translations").
+	err = db.DBGorm.Table("translations").
 		Select("object_id, MATCH(content) AGAINST(? IN NATURAL LANGUAGE MODE) AS score", searchValue).
 		Where("MATCH(content) AGAINST(? IN NATURAL LANGUAGE MODE)", searchValue).
 		Having("score > ?", cfg.Config.Score).
@@ -67,7 +67,7 @@ func SearchCategories(w http.ResponseWriter, r *http.Request) {
 	}
 
 	var total int64
-	err = database.DBGorm.Model(&models.Category{}).
+	err = db.DBGorm.Model(&models.Category{}).
 		Count(&total).Error
 	if err != nil {
 		http.Error(w, "Error counting categories", http.StatusInternalServerError)
@@ -89,7 +89,7 @@ func getCategoriesById(ID []int, language string) ([]models.Category, error) {
 	var categories []models.Category
 
 	// Получение категорий по ID
-	err := database.DBGorm.Where("id IN ?", ID).Find(&categories).Error
+	err := db.DBGorm.Where("id IN ?", ID).Find(&categories).Error
 	if err != nil {
 		return nil, err
 	}
@@ -101,7 +101,7 @@ func getCategoriesById(ID []int, language string) ([]models.Category, error) {
 			Content string
 		}
 
-		err := database.DBGorm.Table("translations").
+		err := db.DBGorm.Table("translations").
 			Select("field, content").
 			Where("type = ? AND object_id = ? AND language = ?", "category", categories[i].ID, language).
 			Find(&translations).Error

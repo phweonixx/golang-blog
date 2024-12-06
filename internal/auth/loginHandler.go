@@ -1,7 +1,7 @@
 package auth
 
 import (
-	"blogAPI/internal/database"
+	"blogAPI/internal/helpers"
 	"blogAPI/internal/models"
 	"encoding/json"
 	"log"
@@ -29,7 +29,7 @@ func LoginHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Перевірка на існування вказаного акаунту
-	exists, err := checkUserExistsLogin(credentials.Username, credentials.Email)
+	exists, err := helpers.CheckUserExistsLogin(credentials.Username, credentials.Email)
 	if err != nil {
 		http.Error(w, "Error checking user", http.StatusInternalServerError)
 		log.Println("Error checking user existence:", err)
@@ -49,24 +49,5 @@ func LoginHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Інформування про успішний вхід в акаунт
-	w.WriteHeader(http.StatusOK)
-	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(map[string]string{
-		"token": token,
-	})
-}
-
-// Перевірка існування акаунту
-func checkUserExistsLogin(username, email string) (bool, error) {
-	var exists bool
-	err := database.DBGorm.Model(&models.User{}).
-		Select("1").
-		Where("(username = ? OR email = ?) AND deleted_at IS NULL", username, email).
-		Limit(1).
-		Find(&exists).Error
-	if err != nil {
-		return false, err
-	}
-
-	return exists, nil
+	helpers.SendJSONResponse(w, http.StatusOK, "Login successfull", token)
 }

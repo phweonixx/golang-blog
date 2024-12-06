@@ -3,7 +3,6 @@ package database
 import (
 	"blogAPI/internal/config"
 	"blogAPI/internal/models"
-	"database/sql"
 	"fmt"
 	"log"
 
@@ -13,11 +12,12 @@ import (
 )
 
 // Змінна бази даних
-var DB *sql.DB
-var DBGorm *gorm.DB
+type DB struct {
+	DBGorm *gorm.DB
+}
 
 // Підключення до бази даних
-func InitDB() {
+func New() *DB {
 	// Настройка з використанням змінних з .env файлу
 	cfg := config.New()
 
@@ -30,26 +30,25 @@ func InitDB() {
 	)
 
 	// Відкриття бази даних GORM
-	var err error
-	DBGorm, err = gorm.Open(mysql.Open(dbConnectionString), &gorm.Config{})
+	gormDB, err := gorm.Open(mysql.Open(dbConnectionString), &gorm.Config{})
 	if err != nil {
 		log.Fatal("Error opening database connection:\n", err)
 	} else {
 		log.Println("GORM database connected successfully!")
 	}
 
-	gormDB, err := DBGorm.DB()
+	rawDB, err := gormDB.DB()
 	if err != nil {
 		log.Fatal("Error getting raw DB from GORM:\n", err)
 	}
 
 	// Перевірка підключення
-	err = gormDB.Ping()
+	err = rawDB.Ping()
 	if err != nil {
 		log.Fatal("Error connecting to database via GORM:\n", err)
 	}
 
-	err = DBGorm.AutoMigrate(
+	err = gormDB.AutoMigrate(
 		&models.Article{},
 		&models.Category{},
 		&models.Company{},
@@ -59,5 +58,9 @@ func InitDB() {
 	)
 	if err != nil {
 		log.Fatal("Migrations failed.")
+	}
+
+	return &DB{
+		DBGorm: gormDB,
 	}
 }

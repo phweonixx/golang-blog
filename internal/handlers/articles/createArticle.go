@@ -2,6 +2,7 @@ package articles
 
 import (
 	"blogAPI/internal/database"
+	"blogAPI/internal/helpers"
 	"blogAPI/internal/models"
 	"blogAPI/pkg/middleware"
 	"encoding/json"
@@ -12,6 +13,8 @@ import (
 
 	"gorm.io/gorm"
 )
+
+var db = database.New()
 
 // Функція створення статті
 func CreateArticle(w http.ResponseWriter, r *http.Request) {
@@ -24,7 +27,7 @@ func CreateArticle(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	// Перевірка введеного значення для мови
-	err = checkLanguage(article.Language)
+	err = helpers.CheckLanguage(article.Language)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
@@ -32,7 +35,7 @@ func CreateArticle(w http.ResponseWriter, r *http.Request) {
 
 	// Перевірка чи має користувач компанію
 	var companyUUID string
-	err = database.DBGorm.Model(&models.Company{}).
+	err = db.DBGorm.Model(&models.Company{}).
 		Select("uuid").
 		Where("owner_uuid = ?", middleware.User_UUID).
 		Take(&companyUUID).Error
@@ -59,7 +62,7 @@ func CreateArticle(w http.ResponseWriter, r *http.Request) {
 	article.UserUUID = middleware.User_UUID
 
 	// Запрос для створення статті
-	result := database.DBGorm.Create(&article)
+	result := db.DBGorm.Create(&article)
 	if result.Error != nil {
 		http.Error(w, "Error creating article!", http.StatusInternalServerError)
 		log.Println(result.Error)
@@ -93,7 +96,7 @@ func CreateArticle(w http.ResponseWriter, r *http.Request) {
 				Content:  content,
 			}
 
-			err := database.DBGorm.Create(&translation).Error
+			err := db.DBGorm.Create(&translation).Error
 			if err != nil {
 				log.Printf("Error creating translation for field %s: %v", field, err)
 			}
@@ -107,7 +110,7 @@ func CreateArticle(w http.ResponseWriter, r *http.Request) {
 				RelatedArticleID: relatedID,
 			}
 
-			err := database.DBGorm.Create(&relatedArticles).Error
+			err := db.DBGorm.Create(&relatedArticles).Error
 			if err != nil {
 				log.Println("Error creating relations for articles! The selected article may not exist.\n",
 					err,
@@ -117,18 +120,5 @@ func CreateArticle(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Інформування про успішне створення статті
-	w.WriteHeader(http.StatusCreated)
-	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(map[string]interface{}{
-		"message": "Article created successfully",
-		"article": article,
-	})
-}
-
-func checkLanguage(lang string) error {
-	validLanguages := map[string]bool{"en": true, "uk": true}
-	if !validLanguages[lang] {
-		return errors.New("invalid language: valid values are 'en' or 'uk'")
-	}
-	return nil
+	helpers.SendJSONResponse(w, http.StatusCreated, "Article created successfully!", article)
 }

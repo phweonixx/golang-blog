@@ -2,6 +2,7 @@ package companies
 
 import (
 	"blogAPI/internal/database"
+	"blogAPI/internal/helpers"
 	"blogAPI/internal/models"
 	"blogAPI/pkg/middleware"
 	"errors"
@@ -10,6 +11,8 @@ import (
 
 	"github.com/google/uuid"
 )
+
+var db = database.New()
 
 var ErrTitleTooShort = errors.New("title less than 3 characters")
 var ErrCompanyExist = errors.New("user already has a company")
@@ -28,7 +31,7 @@ func CreateCompany(company *models.Company) error {
 
 	// Перевірка на існування компанії у користувача
 
-	exists, err := checkCompanyExists(company.OwnerUUID)
+	exists, err := helpers.CheckExists(company.OwnerUUID, "company")
 	if err != nil {
 		log.Println("Error checking company existence:", err)
 		return err
@@ -39,21 +42,10 @@ func CreateCompany(company *models.Company) error {
 	}
 
 	// Запрос для створення компанії
-	err = database.DBGorm.Create(&company).Error
+	err = db.DBGorm.Create(&company).Error
 	if err != nil {
 		return err
 	}
 
 	return nil
-}
-
-func checkCompanyExists(ownerUUID string) (bool, error) {
-	var count int64
-	err := database.DBGorm.Model(&models.Company{}).
-		Where("owner_uuid = ? AND deleted_at IS NULL", ownerUUID).
-		Count(&count).Error
-	if err != nil {
-		return false, err
-	}
-	return count > 0, nil
 }

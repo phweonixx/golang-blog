@@ -1,7 +1,7 @@
 package articles
 
 import (
-	"blogAPI/internal/database"
+	"blogAPI/internal/helpers"
 	"blogAPI/internal/models"
 	"blogAPI/pkg/middleware"
 	"log"
@@ -21,7 +21,7 @@ func DeleteArticle(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	exists, err := checkArticleExists(id)
+	exists, err := helpers.CheckExists(id, "article")
 	if err != nil {
 		http.Error(w, "Error checking article existance.", http.StatusInternalServerError)
 		log.Println(err)
@@ -35,7 +35,7 @@ func DeleteArticle(w http.ResponseWriter, r *http.Request) {
 	// Перевірка чи є користувач автором статті
 	var articleAuthorUUID string
 
-	err = database.DBGorm.Model(&models.Article{}).
+	err = db.DBGorm.Model(&models.Article{}).
 		Select("user_uuid").
 		Where("id = ?", id).
 		Limit(1).
@@ -51,7 +51,7 @@ func DeleteArticle(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Видалення статті
-	err = database.DBGorm.Where("id = ?", id).Delete(&models.Article{}).Error
+	err = db.DBGorm.Where("id = ?", id).Delete(&models.Article{}).Error
 	if err != nil {
 		http.Error(w, "Error deleting the article!", http.StatusInternalServerError)
 		log.Println(err)
@@ -59,7 +59,7 @@ func DeleteArticle(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Видалення перекладів
-	err = database.DBGorm.Where("object_id = ? AND type = ?", id, "article").Delete(&models.Translations{}).Error
+	err = db.DBGorm.Where("object_id = ? AND type = ?", id, "article").Delete(&models.Translations{}).Error
 	if err != nil {
 		http.Error(w, "Error deleting translations for the article!", http.StatusInternalServerError)
 		log.Println(err)
@@ -68,16 +68,4 @@ func DeleteArticle(w http.ResponseWriter, r *http.Request) {
 
 	// Інформування про успішне видалення статті
 	w.WriteHeader(http.StatusNoContent)
-}
-
-func checkArticleExists(id int) (bool, error) {
-	var count int64
-	err := database.DBGorm.Model(&models.Article{}).
-		Where("id = ?", id).
-		Count(&count).Error
-	if err != nil {
-		return false, err
-	}
-
-	return count > 0, nil
 }

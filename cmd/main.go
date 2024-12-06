@@ -20,7 +20,10 @@ func main() {
 	cfg := config.New()
 
 	// Функція з ініціалізіцією бази даних
-	database.InitDB()
+	db := database.New()
+	if db.DBGorm != nil {
+		log.Println("DB initialized and ready to use.")
+	}
 
 	// Маршрути
 	routes.SetupRoutes(api.Router)

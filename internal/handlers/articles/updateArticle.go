@@ -1,7 +1,7 @@
 package articles
 
 import (
-	"blogAPI/internal/database"
+	"blogAPI/internal/helpers"
 	"blogAPI/internal/models"
 	"blogAPI/pkg/middleware"
 	"encoding/json"
@@ -26,7 +26,7 @@ func UpdateArticle(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Перевірка на існування вказаної статті
-	exists, err := checkArticleExists(id)
+	exists, err := helpers.CheckExists(id, "article")
 	if err != nil {
 		http.Error(w, "Error checking article existance.", http.StatusInternalServerError)
 		log.Println(err)
@@ -40,7 +40,7 @@ func UpdateArticle(w http.ResponseWriter, r *http.Request) {
 	// Перевірка чи є користувач автором статті
 	var articleAuthorUUID string
 
-	err = database.DBGorm.Model(&models.Article{}).
+	err = db.DBGorm.Model(&models.Article{}).
 		Select("user_uuid").
 		Where("id = ?", id).
 		Limit(1).
@@ -64,7 +64,7 @@ func UpdateArticle(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	// Перевірка введеного значення для мови
-	err = checkLanguage(article.Language)
+	err = helpers.CheckLanguage(article.Language)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
@@ -74,7 +74,7 @@ func UpdateArticle(w http.ResponseWriter, r *http.Request) {
 	article.UpdatedAt = time.Now()
 
 	// Запрос для оновлення статті
-	err = database.DBGorm.Model(&models.Article{}).
+	err = db.DBGorm.Model(&models.Article{}).
 		Where("id = ?", id).
 		Updates(models.Article{
 			CategoryID: article.CategoryID,
@@ -116,19 +116,19 @@ func UpdateArticle(w http.ResponseWriter, r *http.Request) {
 			}
 
 			var existingTranslation models.Translations
-			err = database.DBGorm.Model(&models.Translations{}).
+			err = db.DBGorm.Model(&models.Translations{}).
 				Where("type = ? AND object_id = ? AND language = ? AND field = ?", translation.Type, translation.ObjectID, translation.Language, translation.Field).
 				First(&existingTranslation).Error
 
 			if errors.Is(err, gorm.ErrRecordNotFound) {
-				err = database.DBGorm.Create(&translation).Error
+				err = db.DBGorm.Create(&translation).Error
 				if err != nil {
 					http.Error(w, "Error creating translation!", http.StatusInternalServerError)
 					log.Println(err)
 					return
 				}
 			} else if err == nil {
-				err = database.DBGorm.Model(&models.Translations{}).
+				err = db.DBGorm.Model(&models.Translations{}).
 					Where("type = ? AND object_id = ? AND language = ? AND field = ?", translation.Type, translation.ObjectID, translation.Language, translation.Field).
 					Updates(map[string]interface{}{
 						"content": content,
@@ -150,7 +150,7 @@ func UpdateArticle(w http.ResponseWriter, r *http.Request) {
 	if len(article.RelatedArticlesID) != 0 {
 		for _, relatedID := range article.RelatedArticlesID {
 			var existing models.RelatedArticles
-			err := database.DBGorm.Where("parent_article_id = ? AND related_article_id = ?", id, relatedID).First(&existing).Error
+			err := db.DBGorm.Where("parent_article_id = ? AND related_article_id = ?", id, relatedID).First(&existing).Error
 
 			if err != nil && err != gorm.ErrRecordNotFound {
 				http.Error(w, "Error checking relation existence!", http.StatusInternalServerError)
@@ -159,7 +159,7 @@ func UpdateArticle(w http.ResponseWriter, r *http.Request) {
 			}
 
 			if err == gorm.ErrRecordNotFound {
-				err = database.DBGorm.Create(&models.RelatedArticles{
+				err = db.DBGorm.Create(&models.RelatedArticles{
 					ParentArticleID:  id,
 					RelatedArticleID: relatedID,
 				}).Error
@@ -176,8 +176,5 @@ func UpdateArticle(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Інформування про успішне оновлення статті
-	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(map[string]string{
-		"message": "Article updated successfully",
-	})
+	helpers.SendJSONResponse(w, http.StatusOK, "Article updated successfully", helpers.Empty{})
 }

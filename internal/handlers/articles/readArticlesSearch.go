@@ -2,7 +2,7 @@ package articles
 
 import (
 	"blogAPI/internal/config"
-	"blogAPI/internal/database"
+	"blogAPI/internal/helpers"
 	"blogAPI/internal/models"
 	"encoding/json"
 	"log"
@@ -16,7 +16,7 @@ func SearchArticles(w http.ResponseWriter, r *http.Request) {
 	cfg := config.New()
 
 	// Перевірка введеного значення для мови
-	err := checkLanguage(lang)
+	err := helpers.CheckLanguage(lang)
 	if lang == "" {
 		lang = cfg.Config.DefaultLang
 	} else if err != nil {
@@ -35,7 +35,7 @@ func SearchArticles(w http.ResponseWriter, r *http.Request) {
 		ObjectID int
 		Score    float64
 	}
-	err = database.DBGorm.Raw(`
+	err = db.DBGorm.Raw(`
 		SELECT object_id, MATCH(content) AGAINST(? IN NATURAL LANGUAGE MODE) AS score
 		FROM translations
 		WHERE MATCH(content) AGAINST(? IN NATURAL LANGUAGE MODE)
@@ -66,7 +66,7 @@ func SearchArticles(w http.ResponseWriter, r *http.Request) {
 	}
 
 	var total int64
-	err = database.DBGorm.Model(&models.Article{}).Count(&total).Error
+	err = db.DBGorm.Model(&models.Article{}).Count(&total).Error
 	if err != nil {
 		http.Error(w, "Error counting articles", http.StatusInternalServerError)
 		log.Println(err)
@@ -86,7 +86,7 @@ func SearchArticles(w http.ResponseWriter, r *http.Request) {
 func getArticlesById(ID []int, language string) ([]models.Article, error) {
 	var articles []models.Article
 
-	err := database.DBGorm.Where("id IN ?", ID).Find(&articles).Error
+	err := db.DBGorm.Where("id IN ?", ID).Find(&articles).Error
 	if err != nil {
 		return nil, err
 	}
@@ -98,7 +98,7 @@ func getArticlesById(ID []int, language string) ([]models.Article, error) {
 			Field   string
 			Content string
 		}
-		err := database.DBGorm.
+		err := db.DBGorm.
 			Table("translations").
 			Select("field, content").
 			Where("type = ? AND object_id = ? AND language = ?", "article", article.ID, language).
@@ -124,7 +124,7 @@ func getArticlesById(ID []int, language string) ([]models.Article, error) {
 		}
 
 		var relatedArticles []int
-		err = database.DBGorm.
+		err = db.DBGorm.
 			Table("related_articles").
 			Select("related_article_id").
 			Where("parent_article_id = ?", article.ID).

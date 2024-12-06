@@ -8,8 +8,10 @@ import (
 	"gorm.io/gorm"
 )
 
+var db = database.New()
+
 func SoftDeleteUser(uuid string) error {
-	err := database.DBGorm.Model(&models.User{}).
+	err := db.DBGorm.Model(&models.User{}).
 		Where("uuid = ?", uuid).
 		Update("deleted_at", gorm.Expr("NOW()")).Error
 
@@ -22,7 +24,7 @@ func SoftDeleteUser(uuid string) error {
 
 func checkUserExists(uuid string) (bool, error) {
 	var exists bool
-	err := database.DBGorm.Model(&models.User{}).
+	err := db.DBGorm.Model(&models.User{}).
 		Select("1").
 		Where("uuid = ? AND deleted_at IS NULL", uuid).
 		Limit(1).

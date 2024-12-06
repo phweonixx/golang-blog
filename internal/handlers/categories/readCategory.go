@@ -2,9 +2,8 @@ package categories
 
 import (
 	"blogAPI/internal/config"
-	"blogAPI/internal/database"
+	"blogAPI/internal/helpers"
 	"blogAPI/internal/models"
-	"encoding/json"
 	"errors"
 	"log"
 	"net/http"
@@ -29,7 +28,7 @@ func ReadCategory(w http.ResponseWriter, r *http.Request) {
 	// Перевірка введеного значення для мови
 	lang := r.URL.Query().Get("lang")
 
-	err = checkLanguage(lang)
+	err = helpers.CheckLanguage(lang)
 	if lang == "" {
 		lang = cfg.Config.DefaultLang
 	} else if err != nil {
@@ -37,7 +36,7 @@ func ReadCategory(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	exists, err := checkCategoryExists(id)
+	exists, err := helpers.CheckExists(id, "category")
 	if err != nil {
 		http.Error(w, "Error checking category existance.", http.StatusInternalServerError)
 		log.Println(err)
@@ -56,14 +55,13 @@ func ReadCategory(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(category)
+	helpers.SendJSONResponse(w, http.StatusOK, "Category found", category)
 }
 
 func getCategoryWithTranslation(id int, language string) (models.Category, error) {
 	var category models.Category
 	// Заповнення структури даними з бази даних
-	err := database.DBGorm.First(&category, id).Error
+	err := db.DBGorm.First(&category, id).Error
 	if err != nil {
 		log.Println(err)
 		return category, err
@@ -74,7 +72,7 @@ func getCategoryWithTranslation(id int, language string) (models.Category, error
 	for _, field := range fields {
 		var content string
 
-		result := database.DBGorm.Model(&models.Translations{}).
+		result := db.DBGorm.Model(&models.Translations{}).
 			Select("content").
 			Where("type = ? AND object_id = ? AND language = ? AND field = ?", "category", id, language, field).
 			Scan(&content)

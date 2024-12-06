@@ -1,6 +1,7 @@
 package auth
 
 import (
+	"blogAPI/internal/helpers"
 	"blogAPI/internal/models"
 	"encoding/json"
 	"log"
@@ -43,7 +44,5 @@ func RegisterHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Інформування про успішне створення акаунту
-	w.WriteHeader(http.StatusCreated)
-	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(user)
+	helpers.SendJSONResponse(w, http.StatusCreated, "Account created successfully", user)
 }

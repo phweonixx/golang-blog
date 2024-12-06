@@ -2,9 +2,8 @@ package articles
 
 import (
 	"blogAPI/internal/config"
-	"blogAPI/internal/database"
+	"blogAPI/internal/helpers"
 	"blogAPI/internal/models"
-	"encoding/json"
 	"errors"
 	"log"
 	"net/http"
@@ -28,7 +27,7 @@ func ReadArticle(w http.ResponseWriter, r *http.Request) {
 
 	// Перевірка введеного значення для мови
 	lang := r.URL.Query().Get("lang")
-	err = checkLanguage(lang)
+	err = helpers.CheckLanguage(lang)
 	if lang == "" {
 		lang = cfg.Config.DefaultLang
 	} else if err != nil {
@@ -37,7 +36,7 @@ func ReadArticle(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Перевірка на існування вказаної статті
-	exists, err := checkArticleExists(id)
+	exists, err := helpers.CheckExists(id, "article")
 	if err != nil {
 		http.Error(w, "Error checking article existance.", http.StatusInternalServerError)
 		log.Println(err)
@@ -56,14 +55,13 @@ func ReadArticle(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(article)
+	helpers.SendJSONResponse(w, http.StatusOK, "Article found", article)
 }
 
 func getArticleWithTranslation(id int, language string) (models.Article, error) {
 	var article models.Article
 	// Заповнення структури даними з бази даних
-	err := database.DBGorm.First(&article, id).Error
+	err := db.DBGorm.First(&article, id).Error
 	if err != nil {
 		log.Println(err)
 		return article, err
@@ -74,7 +72,7 @@ func getArticleWithTranslation(id int, language string) (models.Article, error) 
 	for _, field := range fields {
 		var content string
 
-		result := database.DBGorm.Model(&models.Translations{}).
+		result := db.DBGorm.Model(&models.Translations{}).
 			Select("content").
 			Where("type = ? AND object_id = ? AND language = ? AND field = ?", "article", id, language, field).
 			Scan(&content)
@@ -102,7 +100,7 @@ func getArticleWithTranslation(id int, language string) (models.Article, error) 
 	}
 
 	var relatedArticles []int
-	err = database.DBGorm.Model(&models.RelatedArticles{}).
+	err = db.DBGorm.Model(&models.RelatedArticles{}).
 		Select("related_article_id").
 		Where("parent_article_id = ?", id).
 		Pluck("related_article_id", &relatedArticles).Error

@@ -2,7 +2,7 @@ package articles
 
 import (
 	"blogAPI/internal/config"
-	"blogAPI/internal/database"
+	"blogAPI/internal/helpers"
 	"blogAPI/internal/models"
 	"encoding/json"
 	"errors"
@@ -53,10 +53,23 @@ func ReadArticles(w http.ResponseWriter, r *http.Request) {
 		pageDefault = pageInt
 	}
 
+	if userUUID != "" {
+		if !helpers.IsValidUUID(userUUID) {
+			http.Error(w, "Enter a correct value for user UUID!", http.StatusBadRequest)
+			return
+		}
+	}
+	if companyUUID != "" {
+		if !helpers.IsValidUUID(companyUUID) {
+			http.Error(w, "Enter a correct value for company UUID!", http.StatusBadRequest)
+			return
+		}
+	}
+
 	cfg := config.New()
 
 	// Перевірка введеного значення для мови
-	err := checkLanguage(lang)
+	err := helpers.CheckLanguage(lang)
 	if lang == "" {
 		lang = cfg.Config.DefaultLang
 	} else if err != nil {
@@ -76,7 +89,7 @@ func ReadArticles(w http.ResponseWriter, r *http.Request) {
 	}
 
 	var total int64
-	err = database.DBGorm.Model(&models.Article{}).
+	err = db.DBGorm.Model(&models.Article{}).
 		Count(&total).Error
 	if err != nil {
 		http.Error(w, "Error counting articles", http.StatusInternalServerError)
@@ -98,7 +111,7 @@ func ReadArticles(w http.ResponseWriter, r *http.Request) {
 func getArticlesWithTranslation(limit, offset int, language, category_id, company_uuid, user_uuid string) ([]models.Article, error) {
 	var articles []models.Article
 	// Запрос для пошуку статей по введеним значенням
-	query := database.DBGorm.Model(&models.Article{}).
+	query := db.DBGorm.Model(&models.Article{}).
 		Select("id, category_id, company_uuid, language, created_at, updated_at, user_uuid")
 
 	if category_id != "" {
@@ -122,7 +135,7 @@ func getArticlesWithTranslation(limit, offset int, language, category_id, compan
 		fields := []string{"title", "slug", "description", "seo_title", "seo_description"}
 		for _, field := range fields {
 			var content string
-			err := database.DBGorm.Model(&models.Translations{}).
+			err := db.DBGorm.Model(&models.Translations{}).
 				Select("content").
 				Where("type = ? AND object_id = ? AND language = ? AND field = ?", "article", article.ID, language, field).
 				Scan(&content).Error
@@ -143,7 +156,7 @@ func getArticlesWithTranslation(limit, offset int, language, category_id, compan
 			}
 		}
 		var relatedArticles []int
-		err := database.DBGorm.Model(&models.RelatedArticles{}).
+		err := db.DBGorm.Model(&models.RelatedArticles{}).
 			Where("parent_article_id = ?", article.ID).
 			Pluck("related_article_id", &relatedArticles).Error
 		if err != nil && !errors.Is(err, gorm.ErrRecordNotFound) {

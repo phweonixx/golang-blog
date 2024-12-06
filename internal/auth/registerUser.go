@@ -1,7 +1,6 @@
 package auth
 
 import (
-	"blogAPI/internal/database"
 	"blogAPI/internal/models"
 	"errors"
 	"log"
@@ -49,7 +48,7 @@ func RegisterUser(user *models.User) error {
 	user.CreatedAt = timeNow
 	user.UpdatedAt = timeNow
 
-	result := database.DBGorm.Create(&user)
+	result := db.DBGorm.Create(&user)
 	if result.Error != nil {
 		log.Println("Error creating user:", result.Error)
 		return result.Error
@@ -60,7 +59,7 @@ func RegisterUser(user *models.User) error {
 
 func checkUserExists(username, email string) (bool, error) {
 	var countOfSimilarUsers int64
-	err := database.DBGorm.Model(&models.User{}).
+	err := db.DBGorm.Model(&models.User{}).
 		Where("username = ? OR email = ?", username, email).
 		Count(&countOfSimilarUsers).Error
 	if err != nil {

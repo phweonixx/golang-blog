@@ -1,7 +1,6 @@
 package companies
 
 import (
-	"blogAPI/internal/database"
 	"blogAPI/internal/models"
 	"log"
 )
@@ -9,7 +8,7 @@ import (
 func GetCompanies(limit, offset int, UUID, owner_uuid string) ([]models.Company, error) {
 	var companies []models.Company
 	// Запрос для пошуку компаній по введеним значенням
-	query := database.DBGorm.Model(&models.Company{}).Where("deleted_at IS NULL")
+	query := db.DBGorm.Model(&models.Company{}).Where("deleted_at IS NULL")
 
 	if UUID != "" {
 		query = query.Where("uuid = ?", UUID)

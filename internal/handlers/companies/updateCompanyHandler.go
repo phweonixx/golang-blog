@@ -1,7 +1,7 @@
 package companies
 
 import (
-	"blogAPI/internal/database"
+	"blogAPI/internal/helpers"
 	"blogAPI/internal/models"
 	"blogAPI/pkg/middleware"
 	"encoding/json"
@@ -17,7 +17,7 @@ func UpdateCompanyHandler(w http.ResponseWriter, r *http.Request) {
 	UUID := vars["uuid"]
 
 	// Перевірка на існування вказаної компанії
-	exists, err := checkCompanyExistsByUUID(UUID)
+	exists, err := helpers.CheckExists(UUID, "company")
 	if err != nil {
 		http.Error(w, "Error checking company existence:", http.StatusInternalServerError)
 		return
@@ -30,7 +30,7 @@ func UpdateCompanyHandler(w http.ResponseWriter, r *http.Request) {
 	// Перевірка чи є користувач автором компанії
 	var companyAuthorUUID string
 
-	err = database.DBGorm.Model(&models.Company{}).
+	err = db.DBGorm.Model(&models.Company{}).
 		Select("owner_uuid").
 		Where("uuid = ?", UUID).
 		Limit(1).
@@ -62,8 +62,5 @@ func UpdateCompanyHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(map[string]string{
-		"message": "Company updated successfully",
-	})
+	helpers.SendJSONResponse(w, http.StatusOK, "Company updated successfully", helpers.Empty{})
 }

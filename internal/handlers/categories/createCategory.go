@@ -2,6 +2,7 @@ package categories
 
 import (
 	"blogAPI/internal/database"
+	"blogAPI/internal/helpers"
 	"blogAPI/internal/models"
 	"blogAPI/pkg/middleware"
 	"encoding/json"
@@ -12,6 +13,8 @@ import (
 
 	"gorm.io/gorm"
 )
+
+var db = database.New()
 
 // Функція створення статті
 func CreateCategory(w http.ResponseWriter, r *http.Request) {
@@ -24,7 +27,7 @@ func CreateCategory(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	// Перевірка введеного значення для мови
-	err = checkLanguage(category.Language)
+	err = helpers.CheckLanguage(category.Language)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
@@ -32,7 +35,7 @@ func CreateCategory(w http.ResponseWriter, r *http.Request) {
 
 	// Перевірка чи має користувач компанію
 	var companyUUID string
-	err = database.DBGorm.Model(&models.Company{}).
+	err = db.DBGorm.Model(&models.Company{}).
 		Select("uuid").
 		Where("owner_uuid = ?", middleware.User_UUID).
 		Take(&companyUUID).Error
@@ -59,7 +62,7 @@ func CreateCategory(w http.ResponseWriter, r *http.Request) {
 	category.User_uuid = middleware.User_UUID
 
 	// Запрос для створення категорії
-	result := database.DBGorm.Create(&category)
+	result := db.DBGorm.Create(&category)
 	if result.Error != nil {
 		http.Error(w, "Error creating category!", http.StatusInternalServerError)
 		log.Println(result.Error)
@@ -91,7 +94,7 @@ func CreateCategory(w http.ResponseWriter, r *http.Request) {
 				Content:  content,
 			}
 
-			err := database.DBGorm.Create(&translation).Error
+			err := db.DBGorm.Create(&translation).Error
 			if err != nil {
 				log.Printf("Error creating translation for field %s: %v", field, err)
 			}
@@ -99,18 +102,5 @@ func CreateCategory(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Інформування про успішне створення категорії
-	w.WriteHeader(http.StatusCreated)
-	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(map[string]interface{}{
-		"message":  "Category created successfully",
-		"category": category,
-	})
-}
-
-func checkLanguage(lang string) error {
-	validLanguages := map[string]bool{"en": true, "uk": true}
-	if !validLanguages[lang] {
-		return errors.New("invalid language: valid values are 'en' or 'uk'")
-	}
-	return nil
+	helpers.SendJSONResponse(w, http.StatusCreated, "Category created successfully", category)
 }

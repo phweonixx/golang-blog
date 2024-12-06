@@ -13,6 +13,8 @@ import (
 	"gorm.io/gorm"
 )
 
+var db = database.New()
+
 type Claims struct {
 	Username string `json:"username"`
 	UserUUID string `json:"user_uuid"`
@@ -22,7 +24,7 @@ type Claims struct {
 func LoginUser(credentials *models.Credentials) (string, error) {
 	var storedHash string
 	var user_uuid string
-	err := database.DBGorm.Model(&models.User{}).
+	err := db.DBGorm.Model(&models.User{}).
 		Select("password, uuid").
 		Where("username = ? OR email = ?", credentials.Username, credentials.Email).
 		Row().

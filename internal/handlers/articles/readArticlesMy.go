@@ -2,7 +2,7 @@ package articles
 
 import (
 	"blogAPI/internal/config"
-	"blogAPI/internal/database"
+	"blogAPI/internal/helpers"
 	"blogAPI/internal/models"
 	"blogAPI/pkg/middleware"
 	"encoding/json"
@@ -48,7 +48,7 @@ func ReadArticlesMy(w http.ResponseWriter, r *http.Request) {
 	cfg := config.New()
 
 	// Перевірка введеного значення для мови
-	err := checkLanguage(lang)
+	err := helpers.CheckLanguage(lang)
 	if lang == "" {
 		lang = cfg.Config.DefaultLang
 	} else if err != nil {
@@ -68,7 +68,7 @@ func ReadArticlesMy(w http.ResponseWriter, r *http.Request) {
 	}
 
 	var total int64
-	err = database.DBGorm.Model(&models.Article{}).
+	err = db.DBGorm.Model(&models.Article{}).
 		Count(&total).Error
 	if err != nil {
 		http.Error(w, "Error counting articles", http.StatusInternalServerError)
@@ -90,7 +90,7 @@ func ReadArticlesMy(w http.ResponseWriter, r *http.Request) {
 func getArticlesMyWithTranslation(limit, offset int, language, category_id string) ([]models.Article, error) {
 	var articles []models.Article
 	// Запрос для пошуку статей по введеним значенням
-	query := database.DBGorm.Model(&models.Article{}).
+	query := db.DBGorm.Model(&models.Article{}).
 		Select("id, category_id, company_uuid, language, created_at, updated_at, user_uuid")
 
 	if category_id != "" {
@@ -111,7 +111,7 @@ func getArticlesMyWithTranslation(limit, offset int, language, category_id strin
 		fields := []string{"title", "slug", "description", "seo_title", "seo_description"}
 		for _, field := range fields {
 			var content string
-			err := database.DBGorm.Model(&models.Translations{}).
+			err := db.DBGorm.Model(&models.Translations{}).
 				Select("content").
 				Where("type = ? AND object_id = ? AND language = ? AND field = ?", "article", article.ID, language, field).
 				Scan(&content).Error
@@ -132,7 +132,7 @@ func getArticlesMyWithTranslation(limit, offset int, language, category_id strin
 			}
 		}
 		var relatedArticles []int
-		err := database.DBGorm.Model(&models.RelatedArticles{}).
+		err := db.DBGorm.Model(&models.RelatedArticles{}).
 			Where("parent_article_id = ?", article.ID).
 			Pluck("related_article_id", &relatedArticles).Error
 		if err != nil && !errors.Is(err, gorm.ErrRecordNotFound) {

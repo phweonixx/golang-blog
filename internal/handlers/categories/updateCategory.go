@@ -1,7 +1,7 @@
 package categories
 
 import (
-	"blogAPI/internal/database"
+	"blogAPI/internal/helpers"
 	"blogAPI/internal/models"
 	"blogAPI/pkg/middleware"
 	"encoding/json"
@@ -26,7 +26,7 @@ func UpdateCategory(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Перевірка на існування вказаної категорії
-	exists, err := checkCategoryExists(id)
+	exists, err := helpers.CheckExists(id, "category")
 	if err != nil {
 		http.Error(w, "Error checking category existance.", http.StatusInternalServerError)
 		log.Println(err)
@@ -40,7 +40,7 @@ func UpdateCategory(w http.ResponseWriter, r *http.Request) {
 	// Перевірка чи є користувач автором категорії
 	var categoryAuthorUUID string
 
-	err = database.DBGorm.Model(&models.Category{}).
+	err = db.DBGorm.Model(&models.Category{}).
 		Select("user_uuid").
 		Where("id = ?", id).
 		Limit(1).
@@ -65,7 +65,7 @@ func UpdateCategory(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Перевірка введеного значення для мови
-	err = checkLanguage(category.Language)
+	err = helpers.CheckLanguage(category.Language)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
@@ -75,7 +75,7 @@ func UpdateCategory(w http.ResponseWriter, r *http.Request) {
 	category.UpdatedAt = time.Now()
 
 	// Запрос для оновлення категорії
-	err = database.DBGorm.Model(&models.Category{}).
+	err = db.DBGorm.Model(&models.Category{}).
 		Where("id = ?", id).
 		Updates(models.Category{
 			Language:  category.Language,
@@ -115,19 +115,19 @@ func UpdateCategory(w http.ResponseWriter, r *http.Request) {
 			}
 
 			var existingTranslation models.Translations
-			err = database.DBGorm.Model(&models.Translations{}).
+			err = db.DBGorm.Model(&models.Translations{}).
 				Where("type = ? AND object_id = ? AND language = ? AND field = ?", translation.Type, translation.ObjectID, translation.Language, translation.Field).
 				First(&existingTranslation).Error
 
 			if errors.Is(err, gorm.ErrRecordNotFound) {
-				err = database.DBGorm.Create(&translation).Error
+				err = db.DBGorm.Create(&translation).Error
 				if err != nil {
 					http.Error(w, "Error creating translation!", http.StatusInternalServerError)
 					log.Println(err)
 					return
 				}
 			} else if err == nil {
-				err = database.DBGorm.Model(&models.Translations{}).
+				err = db.DBGorm.Model(&models.Translations{}).
 					Where("type = ? AND object_id = ? AND language = ? AND field = ?", translation.Type, translation.ObjectID, translation.Language, translation.Field).
 					Updates(map[string]interface{}{
 						"content": content,
@@ -147,8 +147,5 @@ func UpdateCategory(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Інформування про успішне оновлення категорії
-	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(map[string]string{
-		"message": "Category updated successfully",
-	})
+	helpers.SendJSONResponse(w, http.StatusOK, "Category updated successfully", helpers.Empty{})
 }

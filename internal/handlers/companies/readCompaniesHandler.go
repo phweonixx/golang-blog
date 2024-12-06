@@ -1,7 +1,7 @@
 package companies
 
 import (
-	"blogAPI/internal/database"
+	"blogAPI/internal/helpers"
 	"blogAPI/internal/models"
 	"encoding/json"
 	"log"
@@ -36,6 +36,19 @@ func ReadCompaniesHandler(w http.ResponseWriter, r *http.Request) {
 		limitDefault = limitInt
 	}
 
+	if UUID != "" {
+		if !helpers.IsValidUUID(UUID) {
+			http.Error(w, "Enter a correct value for user UUID!", http.StatusBadRequest)
+			return
+		}
+	}
+	if ownerUUID != "" {
+		if !helpers.IsValidUUID(ownerUUID) {
+			http.Error(w, "Enter a correct value for company UUID!", http.StatusBadRequest)
+			return
+		}
+	}
+
 	// Перевірка валідності введених значень для сторінок
 	if page != "" {
 		pageInt, err := strconv.Atoi(page)
@@ -59,7 +72,7 @@ func ReadCompaniesHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	var total int64
-	err = database.DBGorm.Model(&models.Company{}).
+	err = db.DBGorm.Model(&models.Company{}).
 		Count(&total).Error
 	if err != nil {
 		http.Error(w, "Error counting companies", http.StatusInternalServerError)
