@@ -33,8 +33,6 @@ func New() *DB {
 	gormDB, err := gorm.Open(mysql.Open(dbConnectionString), &gorm.Config{})
 	if err != nil {
 		log.Fatal("Error opening database connection:\n", err)
-	} else {
-		log.Println("GORM database connected successfully!")
 	}
 
 	rawDB, err := gormDB.DB()
